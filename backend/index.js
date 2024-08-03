@@ -15,6 +15,7 @@ const express = require("express");
 const cors = require("cors");
 
 const app = express();
+const port = process.env.PORT || 8000;
 
 const jwt = require("jsonwebtoken");
 const { authenticateToken } = require("./utilities");
@@ -305,6 +306,8 @@ app.put(
   }
 );
 
-app.listen(8000);
+app.listen(port, () => {
+  console.log(`Server Started on http://localhost:${port}`);
+});
 
 module.exports = app;

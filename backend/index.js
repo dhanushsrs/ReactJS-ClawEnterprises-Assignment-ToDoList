@@ -1,8 +1,5 @@
 require("dotenv").config();
 
-const bcrypt = require("bcrypt");
-const saltRounds = 10;
-
 const config = require("./config.json");
 const mongoose = require("mongoose");
 

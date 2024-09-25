@@ -15,6 +15,7 @@ const app = express();
 const port = process.env.PORT || 8000;
 
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const { authenticateToken } = require("./utilities");
 
 app.use(express.json());
@@ -29,15 +30,14 @@ app.get("/", (req, res) => {
   res.json({ data: "hello" });
 });
 
-//Create Account
+// Create Account
 app.post("/create-account", async (req, res) => {
   const { fullName, email, password } = req.body;
 
   if (!fullName) {
-    return res.status(400).json({
-      error: true,
-      message: "full Name is required",
-    });
+    return res
+      .status(400)
+      .json({ error: true, message: "Full Name is required" });
   }
 
   if (!email) {
@@ -50,22 +50,18 @@ app.post("/create-account", async (req, res) => {
       .json({ error: true, message: "Password is required" });
   }
 
-  const isUser = await User.findOne({ email: email });
-
+  const isUser = await User.findOne({ email });
   if (isUser) {
-    return res.json({
-      error: true,
-      message: "User already exist",
-    });
+    return res.json({ error: true, message: "User already exists" });
   }
 
-  const user = new User({
-    fullName,
-    email,
-    password,
-  });
+  // Hash the password
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-  await user.save();
+  // Create user with hashed password
+  const user = new User({ fullName, email, password: hashedPassword });
+
+  await user.save(); // Save user to the database
 
   const accessToken = jwt.sign({ user }, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: "36000m",
@@ -91,15 +87,16 @@ app.post("/login", async (req, res) => {
     return res.status(400).json({ message: "Password is required" });
   }
 
-  const userInfo = await User.findOne({
-    email: email,
-  });
+  const userInfo = await User.findOne({ email });
 
   if (!userInfo) {
     return res.status(400).json({ message: "User not found" });
   }
 
-  if (userInfo.email === email && userInfo.password === password) {
+  // Use bcrypt to compare the hashed password
+  const passwordMatch = await bcrypt.compare(password, userInfo.password);
+
+  if (passwordMatch) {
     const user = {
       user: userInfo,
     };
